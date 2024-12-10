@@ -1,0 +1,14 @@
+.popup__content_content_image {
+  display: flex;
+  width: auto;
+  max-width: 75vw;
+  height: auto;
+  max-height: 75vh;
+  padding: 0;
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  border-radius: 0;
+  background: transparent;
+  -webkit-background-size: cover;
+  background-size: cover;
+}
