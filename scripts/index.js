@@ -113,14 +113,22 @@ class Place {
 class Card {
   static template = document.querySelector("#card-template").content;
 
-  constructor(place) {
+  constructor(place, places) {
     this.element = Card.template.cloneNode(true);
     this.image = this.element.querySelector(".card__image");
     this.title = this.element.querySelector(".card__title");
+    this.likeButton = this.element.querySelector(".card__like-button");
+    this.likeButton.addEventListener("click", () => this.like());
+    this.deleteButton = this.element.querySelector(".card__delete-button");
+    this.deleteButton.addEventListener("click", () => places.remove(place));
 
     this.title.textContent = place.name;
     this.image.src = place.imageURL;
     this.image.alt = `Изображение "${place.name}"`;
+  }
+
+  like() {
+    this.likeButton.classList.toggle("card__like-button_is-active");
   }
 }
 
@@ -137,6 +145,11 @@ class Places {
 
   prepend(...places) {
     this.list.unshift(...places);
+    this.triggerChange();
+  }
+
+  remove(...places) {
+    this.list = this.list.filter((place) => !places.includes(place));
     this.triggerChange();
   }
 
@@ -159,7 +172,7 @@ class Cards {
 
   update(places) {
     this.list.innerHTML = "";
-    this.list.append(...places.list.map((place) => new Card(place).element));
+    this.list.append(...places.list.map((place) => new Card(place, places).element));
   }
 }
 
