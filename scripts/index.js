@@ -1,52 +1,225 @@
+class Place {
+  /**
+   * @param {number} id
+   * @param {Gallery} source
+   */
+  constructor(id, source) {
+    this.events = {change: new Event()};
+
+    this.id = id;
+    this.source = source;
+  }
+
+  /**
+   * @returns {string}
+   */
+  name() {
+    return this.source.places.get(this.id).name;
+  }
+
+  /**
+   * @returns {string}
+   */
+  imageURL() {
+    return this.source.places.get(this.id).imageURL;
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  liked() {
+    return this.source.places.get(this.id).liked;
+  }
+
+  toggleLike() {
+    const place = this.source.places.get(this.id);
+    place.liked = !place.liked;
+    this.events.change.trigger();
+  }
+
+  remove() {
+    this.source.remove(this.id);
+  }
+}
+
+class Gallery {
+  constructor() {
+    this.events = {change: new Event()};
+
+    this.places = new Map();
+    this.lastUsedID = 0;
+  }
+
+  /**
+   * @param {string} name
+   * @param {string} imageURL
+   * @param {boolean} liked
+   * @returns {Place}
+   */
+  add(name, imageURL, liked = false) {
+    const id = ++this.lastUsedID;
+    this.places.set(id, {id, name, imageURL, liked});
+    this.events.change.trigger();
+    return new Place(id, this);
+  }
+
+  /**
+   * @param {number} id
+   */
+  remove(id) {
+    this.places.delete(id);
+    this.events.change.trigger();
+  }
+
+  /**
+   * @returns {Place[]}
+   */
+  all() {
+    return Array.from(this.places.values())
+      .map((place) => new Place(place.id, this));
+  }
+}
+
 class User {
-  constructor(name, job, eventBroker) {
+  /**
+   * @param {string} name
+   * @param {string} job
+   */
+  constructor(name, job) {
+    this.events = {change: new Event()};
+
     this.name = name;
     this.job = job;
-    this.eventBroker = eventBroker;
-    this.triggerChange();
   }
 
-  setName(name) {
+  /**
+   * @param {string} name
+   * @param {string} job
+   */
+  update(name, job) {
     this.name = name;
-    this.triggerChange();
-  }
-
-  setJob(job) {
     this.job = job;
-    this.triggerChange();
+    this.events.change.trigger();
+  }
+}
+
+
+class Card {
+  static template = document.querySelector("#card-template").content;
+
+  /**
+   * @param {Place} place
+   */
+  constructor(place) {
+    this.place = place;
+    this.place.events.change.subscribe(() => this.update());
+
+    this.element = Card.template.cloneNode(true);
+    this.name = this.element.querySelector(".card__title");
+    this.image = this.element.querySelector(".card__image");
+    this.image.setAttribute("place-id", place.id.toString());
+    this.deleteButton = this.element.querySelector(".card__delete-button");
+    this.deleteButton.addEventListener("click", () => place.remove());
+    this.likeButton = this.element.querySelector(".card__like-button");
+    this.likeButton.addEventListener("click", () => place.toggleLike());
+
+    this.update();
   }
 
-  triggerChange() {
-    this.eventBroker.send("user.changed", this);
+  update() {
+    this.name.textContent = this.place.name();
+    this.image.src = this.place.imageURL();
+    this.image.alt = `Изображение "${this.place.name()}"`;
+    this.likeButton.classList.toggle("card__like-button_is-active", this.place.liked());
+  }
+}
+
+class Deck {
+  /**
+   * @param {Gallery} gallery
+   */
+  constructor(gallery) {
+    this.gallery = gallery;
+    this.gallery.events.change.subscribe(() => this.reset());
+
+    this.list = document.querySelector(".places__list");
+  }
+
+  reset() {
+    this.setCards(this.fetchCards());
+  }
+
+  /**
+   * @returns {Card[]}
+   */
+  fetchCards() {
+    return this.gallery.all()
+      .map((place) => new Card(place))
+      .sort((a, b) => b.place.id - a.place.id);
+  }
+
+  /**
+   * @param {Card[]} cards
+   */
+  setCards(cards) {
+    this.list.innerHTML = "";
+    this.list.append(...cards.map(card => card.element));
   }
 }
 
 class Profile {
-  constructor(eventBroker, profilePopup, cardPopup) {
-    eventBroker.listen("user.changed", (user) => this.update(user));
+  /**
+   *
+   * @param {User} user
+   */
+  constructor(user) {
+    user.events.change.subscribe(() => this.update());
 
-    const element = document.querySelector(".profile");
-    this.name = element.querySelector(".profile__title");
-    this.job = element.querySelector(".profile__description");
-    this.editButton = element.querySelector(".profile__edit-button");
-    this.editButton.addEventListener("click", () => profilePopup.open());
+    this.user = user;
+    this.element = document.querySelector(".profile");
+    this.nameText = this.element.querySelector(".profile__title");
+    this.jobText = this.element.querySelector(".profile__description");
 
-    this.addCardButton = element.querySelector(".profile__add-button");
-    this.addCardButton.addEventListener("click", () => cardPopup.open());
+    this.update();
   }
 
-  update(user) {
-    this.name.textContent = user.name;
-    this.job.textContent = user.job;
+  update() {
+    this.nameText.textContent = this.user.name;
+    this.jobText.textContent = this.user.job;
   }
 }
 
-class ProfilePopup {
+
+class Popup {
+  /**
+   * @param {HTMLElement} element
+   */
+  constructor(element) {
+    this.element = element;
+    this.element.classList.add("popup_is-animated");
+  }
+
+  open() {
+    this.element.classList.add("popup_is-opened");
+  }
+
+  close() {
+    this.element.classList.remove("popup_is-opened");
+  }
+}
+
+class ProfilePopup extends Popup {
+  /**
+   *
+   * @param {User} user
+   */
   constructor(user) {
+    super(document.querySelector(".popup_type_edit"));
+
     this.user = user;
 
-    this.element = document.querySelector(".popup_type_edit");
-    this.element.classList.add("popup_is-animated");
+    this.openButton = document.querySelector(".profile__edit-button");
+    this.openButton.addEventListener("click", () => this.open());
     this.closeButton = this.element.querySelector(".popup__close");
     this.closeButton.addEventListener("click", () => this.close());
 
@@ -57,182 +230,150 @@ class ProfilePopup {
   }
 
   open() {
+    this.update();
+    super.open();
+  }
+
+  update() {
     this.nameInputField.value = this.user.name;
     this.jobInputField.value = this.user.job;
-    this.element.classList.add("popup_is-opened");
   }
 
-  close() {
-    this.element.classList.remove("popup_is-opened");
-  }
-
+  /**
+   * @param {Event} event
+   */
   submit(event) {
     event.preventDefault();
-    this.user.setName(this.nameInputField.value);
-    this.user.setJob(this.jobInputField.value);
+    this.user.update(this.nameInputField.value, this.jobInputField.value);
     this.close();
   }
 }
 
-class CardPopup {
-  constructor(places) {
-    this.places = places;
-    this.element = document.querySelector(".popup_type_new-card");
-    this.element.classList.add("popup_is-animated");
+class CardPopup extends Popup {
+  /**
+   * @param {Gallery} gallery
+   */
+  constructor(gallery) {
+    super(document.querySelector(".popup_type_new-card"));
+
+    this.gallery = gallery;
+
+    this.openButton = document.querySelector(".profile__add-button");
+    this.openButton.addEventListener("click", () => this.open());
     this.closeButton = this.element.querySelector(".popup__close");
     this.closeButton.addEventListener("click", () => this.close());
 
     this.form = document.querySelector("form[name=\"new-place\"]");
     this.form.addEventListener("submit", (event) => this.submit(event));
-    this.titleInputField = this.form.querySelector(".popup__input_type_card-name");
+    this.nameInputField = this.form.querySelector(".popup__input_type_card-name");
     this.imageURLInputField = this.form.querySelector(".popup__input_type_url");
   }
 
   open() {
-    this.titleInputField.value = "";
+    this.clear();
+    super.open();
+  }
+
+  clear() {
+    this.nameInputField.value = "";
     this.imageURLInputField.value = "";
-    this.element.classList.add("popup_is-opened");
   }
 
-  close() {
-    this.element.classList.remove("popup_is-opened");
-  }
-
+  /**
+   * @param {Event} event
+   */
   submit(event) {
     event.preventDefault();
-    this.places.prepend(new Place(this.titleInputField.value, this.imageURLInputField.value));
+    this.gallery.add(this.nameInputField.value, this.imageURLInputField.value);
     this.close();
   }
 }
 
-class ImagePopup {
-  constructor() {
-    this.element = document.querySelector(".popup_type_image");
-    this.element.classList.add("popup_is-animated");
-    this.image = this.element.querySelector(".popup__image");
-    this.title = this.element.querySelector(".popup__caption");
+class ImagePopup extends Popup {
+  /**
+   * @param {Gallery} gallery
+   */
+  constructor(gallery) {
+    super(document.querySelector(".popup_type_image"));
+
+    this.gallery = gallery;
+
+    this.placesList = document.querySelector(".places__list");
+    this.placesList.addEventListener("click", (event) => this.open(event));
     this.closeButton = this.element.querySelector(".popup__close");
     this.closeButton.addEventListener("click", () => this.close());
+
+    this.nameText = this.element.querySelector(".popup__caption");
+    this.imageImg = this.element.querySelector(".popup__image");
   }
 
-  open(place) {
-    this.title.textContent = place.name;
-    this.image.src = place.imageURL;
-    this.element.classList.add("popup_is-opened");
+  /**
+   * @param {Event} event
+   */
+  open(event) {
+    if (!event.target.classList.contains("card__image")) {
+      return;
+    }
+    this.update(this.fetchPlace(event));
+    super.open();
   }
 
-  close() {
-    this.element.classList.remove("popup_is-opened");
-  }
-}
-
-class Place {
-  constructor(name, imageURL) {
-    this.name = name;
-    this.imageURL = imageURL;
-  }
-}
-
-class Card {
-  static template = document.querySelector("#card-template").content;
-
-  constructor(place, places, imagePopup) {
-    this.element = Card.template.cloneNode(true);
-    this.image = this.element.querySelector(".card__image");
-    this.image.addEventListener("click", () => imagePopup.open(place));
-    this.title = this.element.querySelector(".card__title");
-    this.likeButton = this.element.querySelector(".card__like-button");
-    this.likeButton.addEventListener("click", () => this.like());
-    this.deleteButton = this.element.querySelector(".card__delete-button");
-    this.deleteButton.addEventListener("click", () => places.remove(place));
-
-    this.title.textContent = place.name;
-    this.image.src = place.imageURL;
-    this.image.alt = `Изображение "${place.name}"`;
+  /**
+   * @param {Event} event
+   * @returns {Place}
+   */
+  fetchPlace(event) {
+    const id = Number(event.target.getAttribute("place-id"));
+    return new Place(id, this.gallery);
   }
 
-  like() {
-    this.likeButton.classList.toggle("card__like-button_is-active");
+  /**
+   * @param {Place} place
+   */
+  update(place) {
+    this.nameText.textContent = place.name();
+    this.imageImg.src = place.imageURL();
   }
 }
 
-class Places {
-  constructor(eventBroker) {
-    this.eventBroker = eventBroker;
-    this.list = [];
-  }
 
-  append(...places) {
-    this.list.push(...places);
-    this.triggerChange();
-  }
-
-  prepend(...places) {
-    this.list.unshift(...places);
-    this.triggerChange();
-  }
-
-  remove(...places) {
-    this.list = this.list.filter((place) => !places.includes(place));
-    this.triggerChange();
-  }
-
-  clear() {
-    this.list = [];
-    this.triggerChange();
-  }
-
-  triggerChange() {
-    this.eventBroker.send("places.changed", this);
-  }
-}
-
-class Cards {
-  constructor(eventBroker, imagePopup) {
-    eventBroker.listen("places.changed", (place) => this.update(place));
-
-    this.list = document.querySelector(".places__list");
-    this.imagePopup = imagePopup;
-  }
-
-  update(places) {
-    this.list.innerHTML = "";
-    this.list.append(...places.list.map((place) => new Card(place, places, this.imagePopup).element));
-  }
-}
-
-class EventBroker {
+class Event {
   constructor() {
-    this.listeners = {};
+    this.listeners = [];
   }
 
-  listen(event, callback) {
-    if (!this.listeners[event]) {
-      this.listeners[event] = [];
-    }
-    this.listeners[event].push(callback);
+  /**
+   * @param {function} listener
+   */
+  subscribe(listener) {
+    this.listeners.push(listener);
   }
 
-  send(event, ...args) {
-    if (this.listeners[event]) {
-      this.listeners[event].forEach(callback => callback(...args));
-    }
+  /**
+   * @param {function} listener
+   */
+  unsubscribe(listener) {
+    this.listeners = this.listeners.filter((l) => l !== listener);
+  }
+
+  trigger(data) {
+    this.listeners.forEach(listener => listener(data));
   }
 }
 
 
-function init(initialCards) {
-  const eventBroker = new EventBroker();
-  const imagePopup = new ImagePopup();
-  const places = new Places(eventBroker);
-  const cards = new Cards(eventBroker, imagePopup);
+function init(cards) {
+  const user = new User("Жак-Ив Кусто", "Исследователь океана");
+  const places = new Gallery();
 
-  const user = new User("Жак-Ив Кусто", "Исследователь океана", eventBroker);
+  const profile = new Profile(user);
+  cards.forEach((place) => places.add(place.name, place.link));
+  const deck = new Deck(places);
+  deck.reset();
+
   const profilePopup = new ProfilePopup(user);
   const cardPopup = new CardPopup(places);
-  const profile = new Profile(eventBroker, profilePopup, cardPopup);
-
-  places.append(...initialCards.map(({name, link}) => new Place(name, link)));
+  const imagePopup = new ImagePopup(places);
 }
 
 init(initialCards);
