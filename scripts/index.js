@@ -46,6 +46,7 @@ class ProfilePopup {
     this.user = user;
 
     this.element = document.querySelector(".popup_type_edit");
+    this.element.classList.add("popup_is-animated");
     this.closeButton = this.element.querySelector(".popup__close");
     this.closeButton.addEventListener("click", () => this.close());
 
@@ -77,6 +78,7 @@ class CardPopup {
   constructor(places) {
     this.places = places;
     this.element = document.querySelector(".popup_type_new-card");
+    this.element.classList.add("popup_is-animated");
     this.closeButton = this.element.querySelector(".popup__close");
     this.closeButton.addEventListener("click", () => this.close());
 
@@ -103,6 +105,27 @@ class CardPopup {
   }
 }
 
+class ImagePopup {
+  constructor() {
+    this.element = document.querySelector(".popup_type_image");
+    this.element.classList.add("popup_is-animated");
+    this.image = this.element.querySelector(".popup__image");
+    this.title = this.element.querySelector(".popup__caption");
+    this.closeButton = this.element.querySelector(".popup__close");
+    this.closeButton.addEventListener("click", () => this.close());
+  }
+
+  open(place) {
+    this.title.textContent = place.name;
+    this.image.src = place.imageURL;
+    this.element.classList.add("popup_is-opened");
+  }
+
+  close() {
+    this.element.classList.remove("popup_is-opened");
+  }
+}
+
 class Place {
   constructor(name, imageURL) {
     this.name = name;
@@ -113,9 +136,10 @@ class Place {
 class Card {
   static template = document.querySelector("#card-template").content;
 
-  constructor(place, places) {
+  constructor(place, places, imagePopup) {
     this.element = Card.template.cloneNode(true);
     this.image = this.element.querySelector(".card__image");
+    this.image.addEventListener("click", () => imagePopup.open(place));
     this.title = this.element.querySelector(".card__title");
     this.likeButton = this.element.querySelector(".card__like-button");
     this.likeButton.addEventListener("click", () => this.like());
@@ -164,15 +188,16 @@ class Places {
 }
 
 class Cards {
-  constructor(eventBroker) {
+  constructor(eventBroker, imagePopup) {
     eventBroker.listen("places.changed", (place) => this.update(place));
 
     this.list = document.querySelector(".places__list");
+    this.imagePopup = imagePopup;
   }
 
   update(places) {
     this.list.innerHTML = "";
-    this.list.append(...places.list.map((place) => new Card(place, places).element));
+    this.list.append(...places.list.map((place) => new Card(place, places, this.imagePopup).element));
   }
 }
 
@@ -198,8 +223,9 @@ class EventBroker {
 
 function init(initialCards) {
   const eventBroker = new EventBroker();
+  const imagePopup = new ImagePopup();
   const places = new Places(eventBroker);
-  const cards = new Cards(eventBroker);
+  const cards = new Cards(eventBroker, imagePopup);
 
   const user = new User("Жак-Ив Кусто", "Исследователь океана", eventBroker);
   const profilePopup = new ProfilePopup(user);
