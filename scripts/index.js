@@ -190,6 +190,121 @@ class Profile {
 }
 
 
+class InputField {
+  /**
+   * @param {HTMLLabelElement} label
+   */
+  constructor(label) {
+    this.field = label.querySelector(".popup__input");
+    this.error = label.querySelector(".popup__input-error");
+
+    this.field.addEventListener("input", () => this.updateState());
+  }
+
+  /**
+   * @returns {string}
+   */
+  value() {
+    return this.field.value;
+  }
+
+  /**
+   * @param {string} value
+   */
+  setValue(value) {
+    this.field.value = value;
+    this.hideInputError();
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  valid() {
+    return this.field.validity.valid;
+  }
+
+  /**
+   * @returns {string}
+   */
+  name() {
+    return this.field.name;
+  }
+
+  updateState() {
+    if (!this.valid()) {
+      this.showInputError();
+    } else {
+      this.hideInputError();
+    }
+  }
+
+  showInputError() {
+    this.field.classList.add("popup__input_type_error");
+    this.error.textContent = this.field.validationMessage;
+    this.error.classList.add("popup__input-error_active");
+  }
+
+  hideInputError() {
+    this.field.classList.remove("popup__input_type_error");
+    this.error.classList.remove("popup__input-error_active");
+    this.error.textContent = "";
+  }
+}
+
+class Form {
+  /**
+   * @param {HTMLFormElement} form
+   */
+  constructor(form) {
+    this.form = form;
+    this.submitButton = this.form.querySelector(".popup__button");
+    this.inputFields = this.fetchInputFields();
+
+    this.form.addEventListener("input", () => this.updateSubmitButtonState());
+  }
+
+  /**
+   * @returns {InputField[]}
+   */
+  fetchInputFields() {
+    return Array.from(this.form.querySelectorAll(".popup_label"))
+      .map((label) => new InputField(label));
+  }
+
+  /**
+   * @returns {Object}
+   */
+  fieldValues() {
+    return this.inputFields.reduce(function (values, field) {
+      values[field.name()] = field.value();
+      return values;
+    }, {});
+  }
+
+  /**
+   * @param {Object} values
+   */
+  setFieldValues(values) {
+    this.inputFields.forEach((field) => field.setValue(values[field.name()]));
+    this.updateSubmitButtonState();
+  }
+
+  updateSubmitButtonState() {
+    if (!this.validInputFields()) {
+      this.submitButton.classList.add("popup__button_inactive");
+    } else {
+      this.submitButton.classList.remove("popup__button_inactive");
+    }
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  validInputFields() {
+    return this.inputFields.every((field) => field.valid());
+  }
+}
+
 class Popup {
   /**
    * @param {HTMLElement} element
@@ -210,41 +325,34 @@ class Popup {
 
 class ProfilePopup extends Popup {
   /**
-   *
    * @param {User} user
    */
   constructor(user) {
     super(document.querySelector(".popup_type_edit"));
 
     this.user = user;
+    this.form = new Form(this.element.querySelector(".popup__form"));
 
     this.openButton = document.querySelector(".profile__edit-button");
     this.openButton.addEventListener("click", () => this.open());
     this.closeButton = this.element.querySelector(".popup__close");
     this.closeButton.addEventListener("click", () => this.close());
 
-    this.form = document.querySelector("form[name=\"edit-profile\"]");
-    this.form.addEventListener("submit", (event) => this.submit(event));
-    this.nameInputField = this.form.querySelector(".popup__input_type_name");
-    this.jobInputField = this.form.querySelector(".popup__input_type_description");
+    this.element.addEventListener("submit", (event) => this.onFormSubmit(event));
   }
 
   open() {
-    this.update();
+    this.form.setFieldValues({name: this.user.name, job: this.user.job});
     super.open();
   }
 
-  update() {
-    this.nameInputField.value = this.user.name;
-    this.jobInputField.value = this.user.job;
-  }
-
   /**
-   * @param {Event} event
+   * @param {SubmitEvent} event
    */
-  submit(event) {
+  onFormSubmit(event) {
     event.preventDefault();
-    this.user.update(this.nameInputField.value, this.jobInputField.value);
+    const values = this.form.fieldValues();
+    this.user.update(values.name, values.job);
     this.close();
   }
 }
@@ -257,34 +365,28 @@ class CardPopup extends Popup {
     super(document.querySelector(".popup_type_new-card"));
 
     this.gallery = gallery;
+    this.form = new Form(this.element.querySelector(".popup__form"));
 
     this.openButton = document.querySelector(".profile__add-button");
     this.openButton.addEventListener("click", () => this.open());
     this.closeButton = this.element.querySelector(".popup__close");
     this.closeButton.addEventListener("click", () => this.close());
 
-    this.form = document.querySelector("form[name=\"new-place\"]");
-    this.form.addEventListener("submit", (event) => this.submit(event));
-    this.nameInputField = this.form.querySelector(".popup__input_type_card-name");
-    this.imageURLInputField = this.form.querySelector(".popup__input_type_url");
+    this.element.addEventListener("submit", (event) => this.onFormSubmit(event));
   }
 
   open() {
-    this.clear();
+    this.form.setFieldValues({name: "", imageURL: ""});
     super.open();
   }
 
-  clear() {
-    this.nameInputField.value = "";
-    this.imageURLInputField.value = "";
-  }
-
   /**
-   * @param {Event} event
+   * @param {SubmitEvent} event
    */
-  submit(event) {
+  onFormSubmit(event) {
     event.preventDefault();
-    this.gallery.add(this.nameInputField.value, this.imageURLInputField.value);
+    const values = this.form.fieldValues();
+    this.gallery.add(values.name, values.imageURL);
     this.close();
   }
 }
