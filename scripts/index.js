@@ -312,6 +312,7 @@ class Popup {
   constructor(element) {
     this.element = element;
     this.element.classList.add("popup_is-animated");
+    this.element.addEventListener("click", (event) => this.onOverlayClick(event));
   }
 
   open() {
@@ -320,6 +321,15 @@ class Popup {
 
   close() {
     this.element.classList.remove("popup_is-opened");
+  }
+
+  /**
+   * @param {MouseEvent} event
+   */
+  onOverlayClick(event) {
+    if (event.target === this.element) {
+      this.close();
+    }
   }
 }
 
