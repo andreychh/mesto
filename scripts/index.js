@@ -313,14 +313,17 @@ class Popup {
     this.element = element;
     this.element.classList.add("popup_is-animated");
     this.element.addEventListener("click", (event) => this.onOverlayClick(event));
+    this.escapeKeydownListener = this.onEscapeKeydown.bind(this);
   }
 
   open() {
     this.element.classList.add("popup_is-opened");
+    document.addEventListener("keydown", this.escapeKeydownListener);
   }
 
   close() {
     this.element.classList.remove("popup_is-opened");
+    document.removeEventListener("keydown", this.escapeKeydownListener);
   }
 
   /**
@@ -328,6 +331,15 @@ class Popup {
    */
   onOverlayClick(event) {
     if (event.target === this.element) {
+      this.close();
+    }
+  }
+
+  /**
+   * @param {KeyboardEvent} event
+   */
+  onEscapeKeydown(event) {
+    if (event.key === "Escape") {
       this.close();
     }
   }
