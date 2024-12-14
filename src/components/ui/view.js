@@ -9,6 +9,7 @@ export class Profile {
     this.element = document.querySelector(".profile");
     this.nameText = this.element.querySelector(".profile__title");
     this.jobText = this.element.querySelector(".profile__description");
+    this.avatarImage = this.element.querySelector(".profile__image");
 
     this.update();
   }
@@ -16,6 +17,7 @@ export class Profile {
   update() {
     this.nameText.textContent = this.user.name;
     this.jobText.textContent = this.user.job;
+    this.avatarImage.src = this.user.avatarURL;
   }
 }
 

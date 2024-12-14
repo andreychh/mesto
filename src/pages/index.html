@@ -14,13 +14,16 @@
   </header>
   <main class="content">
     <section class="profile page__section">
-      <div class="profile__image"></div>
+      <div class="profile__avatar">
+        <img class="profile__image" src="" alt="Аватар пользователя">
+        <div class="profile__edit-avatar-button"></div>
+      </div>
       <div class="profile__info">
         <h1 class="profile__title">Жак-Ив Кусто</h1>
-        <button type="button" class="profile__edit-button"></button>
+        <button type="button" class="profile__edit-info-button"></button>
         <p class="profile__description">Исследователь океана</p>
       </div>
-      <button type="button" class="profile__add-button"></button>
+      <button type="button" class="profile__add-card-button"></button>
     </section>
     <section class="places page__section">
       <ul class="places__list"></ul>
@@ -29,33 +32,33 @@
   <footer class="footer page__section">
     <p class="footer__copyright">© 2024 Mesto Russia</p>
   </footer>
-  <div class="popup popup_type_edit">
+  <div class="popup popup_is-animated popup_type_edit-profile-info">
     <div class="popup__content">
       <button type="button" class="popup__close"></button>
       <h3 class="popup__title">Редактировать профиль</h3>
-      <form name="edit-profile" class="popup__form">
+      <form name="edit-profile-info" class="popup__form">
         <label class="popup_label">
           <input type="text" name="name" class="popup__input popup__input_type_name" maxlength="40" minlength="2"
                  placeholder="Имя" required>
           <span class="popup__input-error"></span>
         </label>
         <label class="popup_label">
-          <input type="text" name="job" class="popup__input popup__input_type_description" maxlength="200"
-                 minlength="2" placeholder="Занятие" required>
+          <input type="text" name="job" class="popup__input popup__input_type_description" maxlength="200" minlength="2"
+                 placeholder="Занятие" required>
           <span class="popup__input-error"></span>
         </label>
         <button type="submit" class="button popup__button">Сохранить</button>
       </form>
     </div>
   </div>
-  <div class="popup popup_type_new-card">
+  <div class="popup popup_is-animated popup_type_add-card">
     <div class="popup__content">
       <button type="button" class="popup__close"></button>
       <h3 class="popup__title">Новое место</h3>
-      <form name="new-place" class="popup__form">
+      <form name="add-card" class="popup__form">
         <label class="popup_label">
-          <input type="text" name="name" class="popup__input popup__input_type_card-name" maxlength="30"
-                 minlength="2" placeholder="Название" required>
+          <input type="text" name="name" class="popup__input popup__input_type_card-name" maxlength="30" minlength="2"
+                 placeholder="Название" required>
           <span class="popup__input-error"></span>
         </label>
         <label class="popup_label">
@@ -67,11 +70,25 @@
       </form>
     </div>
   </div>
-  <div class="popup popup_type_image">
+  <div class="popup popup_is-animated popup_type_image">
     <div class="popup__content popup__content_content_image">
       <button type="button" class="popup__close"></button>
       <img class="popup__image" src="" alt="">
       <p class="popup__caption"></p>
+    </div>
+  </div>
+  <div class="popup popup_is-animated popup_type_edit-profile-avatar">
+    <div class="popup__content">
+      <button type="button" class="popup__close"></button>
+      <h3 class="popup__title">Обновить аватар</h3>
+      <form name="edit-profile-avatar" class="popup__form">
+        <label class="popup_label">
+          <input type="url" name="avatarURL" class="popup__input popup__input_type_url" placeholder="Ссылка на аватар"
+                 required>
+          <span class="popup__input-error"></span>
+        </label>
+        <button type="submit" class="button popup__button">Сохранить</button>
+      </form>
     </div>
   </div>
 </div>

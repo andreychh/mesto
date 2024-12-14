@@ -5,12 +5,14 @@ export class User {
   /**
    * @param {string} name
    * @param {string} job
+   * @param {string} avatarURL
    */
-  constructor(name, job) {
+  constructor(name, job, avatarURL) {
     this.events = {change: new Event()};
 
     this.name = name;
     this.job = job;
+    this.avatarURL = avatarURL;
   }
 
   /**
@@ -20,6 +22,14 @@ export class User {
   update(name, job) {
     this.name = name;
     this.job = job;
+    this.events.change.trigger();
+  }
+
+  /**
+   * @param {string} avatarURL
+   */
+  setAvatarURL(avatarURL) {
+    this.avatarURL = avatarURL;
     this.events.change.trigger();
   }
 }

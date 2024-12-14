@@ -8,7 +8,6 @@ export class Popup {
    */
   constructor(element) {
     this.element = element;
-    this.element.classList.add("popup_is-animated");
     this.element.addEventListener("click", (event) => this.onOverlayClick(event));
     this.escapeKeydownListener = this.onEscapeKeydown.bind(this);
   }
@@ -47,12 +46,12 @@ export class ProfilePopup extends Popup {
    * @param {User} user
    */
   constructor(user) {
-    super(document.querySelector(".popup_type_edit"));
+    super(document.querySelector(".popup_type_edit-profile-info"));
 
     this.user = user;
     this.form = new Form(this.element.querySelector(".popup__form"));
 
-    this.openButton = document.querySelector(".profile__edit-button");
+    this.openButton = document.querySelector(".profile__edit-info-button");
     this.openButton.addEventListener("click", () => this.open());
     this.closeButton = this.element.querySelector(".popup__close");
     this.closeButton.addEventListener("click", () => this.close());
@@ -76,17 +75,85 @@ export class ProfilePopup extends Popup {
   }
 }
 
+export class ProfileInfoPopup extends Popup {
+  /**
+   * @param {User} user
+   */
+  constructor(user) {
+    super(document.querySelector(".popup_type_edit-profile-info"));
+
+    this.user = user;
+    this.form = new Form(this.element.querySelector(".popup__form"));
+
+    this.openButton = document.querySelector(".profile__edit-info-button");
+    this.openButton.addEventListener("click", () => this.open());
+    this.closeButton = this.element.querySelector(".popup__close");
+    this.closeButton.addEventListener("click", () => this.close());
+
+    this.element.addEventListener("submit", (event) => this.onFormSubmit(event));
+  }
+
+  open() {
+    this.form.setFieldValues({name: this.user.name, job: this.user.job});
+    super.open();
+  }
+
+  /**
+   * @param {SubmitEvent} event
+   */
+  onFormSubmit(event) {
+    event.preventDefault();
+    const values = this.form.fieldValues();
+    this.user.update(values.name, values.job);
+    this.close();
+  }
+}
+
+export class ProfileAvatarPopup extends Popup {
+  /**
+   * @param {User} user
+   */
+  constructor(user) {
+    super(document.querySelector(".popup_type_edit-profile-avatar"));
+
+    this.user = user;
+    this.form = new Form(this.element.querySelector(".popup__form"));
+
+    this.openButton = document.querySelector(".profile__edit-avatar-button");
+    this.openButton.addEventListener("click", () => this.open());
+    this.closeButton = this.element.querySelector(".popup__close");
+    this.closeButton.addEventListener("click", () => this.close());
+
+    this.element.addEventListener("submit", (event) => this.onFormSubmit(event));
+  }
+
+  open() {
+    this.form.setFieldValues({avatarURL: ""});
+    super.open();
+  }
+
+  /**
+   * @param {SubmitEvent} event
+   */
+  onFormSubmit(event) {
+    event.preventDefault();
+    const values = this.form.fieldValues();
+    this.user.setAvatarURL(values.avatarURL);
+    this.close();
+  }
+}
+
 export class CardPopup extends Popup {
   /**
    * @param {Gallery} gallery
    */
   constructor(gallery) {
-    super(document.querySelector(".popup_type_new-card"));
+    super(document.querySelector(".popup_type_add-card"));
 
     this.gallery = gallery;
     this.form = new Form(this.element.querySelector(".popup__form"));
 
-    this.openButton = document.querySelector(".profile__add-button");
+    this.openButton = document.querySelector(".profile__add-card-button");
     this.openButton.addEventListener("click", () => this.open());
     this.closeButton = this.element.querySelector(".popup__close");
     this.closeButton.addEventListener("click", () => this.close());
