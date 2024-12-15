@@ -44,8 +44,9 @@ export class Place {
    * @param {APIPlace} apiPlace
    * @param {boolean} liked
    * @param {number} likes
+   * @param {boolean} ownedByUser
    */
-  constructor(client, apiPlace, liked, likes) {
+  constructor(client, apiPlace, liked, likes, ownedByUser) {
     this.events = {change: new Event()};
     this.client = client;
     this.id = apiPlace._id;
@@ -53,6 +54,7 @@ export class Place {
     this.imageURL = apiPlace.link;
     this.liked = liked;
     this.likes = likes;
+    this.ownedByUser = ownedByUser;
   }
 
   async toggleLike() {
@@ -117,6 +119,12 @@ export class Gallery {
    */
   apiPlaceToPlace(apiPlace) {
     const likerIDs = apiPlace.likes.map((apiUser) => apiUser._id);
-    return new Place(this.client, apiPlace, likerIDs.includes(this.user.id), likerIDs.length);
+    return new Place(
+      this.client,
+      apiPlace,
+      likerIDs.includes(this.user.id),
+      likerIDs.length,
+      apiPlace.owner._id === this.user.id,
+    );
   }
 }

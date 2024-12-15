@@ -30,33 +30,42 @@ export class Card {
    */
   constructor(place, gallery) {
     this.place = place;
-    this.place.events.change.subscribe(() => this.update());
+    this.gallery = gallery;
 
+    this.place.events.change.subscribe(() => this.update());
     this.element = Card.template.cloneNode(true);
-    this.name = this.element.querySelector(".card__title");
-    this.image = this.element.querySelector(".card__image");
-    this.image.setAttribute("place-id", place.id);
-    this.deleteButton = this.element.querySelector(".card__delete-button");
-    this.deleteButton.addEventListener("click", () => gallery.remove(place.id).catch(console.log));
-    this.likeSection = this.element.querySelector(".card__like-section");
-    this.likeCount = this.likeSection.querySelector(".card__like-count");
-    this.likeButton = this.likeSection.querySelector(".card__like-button");
-    this.likeButton.addEventListener("click", () => place.toggleLike().catch(console.log));
+
+    this.setupElements();
+    this.setData();
 
     this.update();
   }
 
-  update() {
-    this.name.textContent = this.place.name;
-    this.image.src = this.place.imageURL;
-    this.image.alt = `Изображение "${this.place.name}"`;
-    if (this.place.likes > 0) {
-      this.likeSection.classList.add("card__like-section_has-likes");
-      this.likeCount.textContent = this.place.likes;
-    } else {
-      this.likeSection.classList.remove("card__like-section_has-likes");
-      this.likeCount.textContent = "";
+  setupElements() {
+    this.nameText = this.element.querySelector(".card__title");
+    this.imageImg = this.element.querySelector(".card__image");
+    this.likeSection = this.element.querySelector(".card__like-section");
+    this.likeCount = this.likeSection.querySelector(".card__like-count");
+    this.likeButton = this.likeSection.querySelector(".card__like-button");
+    this.likeButton.addEventListener("click", () => this.place.toggleLike().catch(console.log));
+
+    this.deleteButton = this.element.querySelector(".card__delete-button");
+    if (this.place.ownedByUser) {
+      this.deleteButton.classList.remove("card__delete-button_is-hidden");
+      this.deleteButton.addEventListener("click", () => this.gallery.remove(this.place.id).catch(console.log));
     }
+  }
+
+  setData() {
+    this.nameText.textContent = this.place.name;
+    this.imageImg.src = this.place.imageURL;
+    this.imageImg.alt = `Изображение "${this.place.name}"`;
+    this.imageImg.setAttribute("place-id", this.place.id);
+  }
+
+  update() {
+    this.likeCount.textContent = this.place.likes;
+    this.likeSection.classList.toggle("card__like-section_has-likes", this.place.likes > 0);
     this.likeButton.classList.toggle("card__like-button_is-active", this.place.liked);
   }
 }
