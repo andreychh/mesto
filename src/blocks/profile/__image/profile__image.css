@@ -4,4 +4,5 @@
   transition: opacity 0.3s;
   background-position: center;
   background-size: cover;
+  object-fit: cover;
 }
