@@ -38,7 +38,9 @@ export class Card {
     this.image.setAttribute("place-id", place.id);
     this.deleteButton = this.element.querySelector(".card__delete-button");
     this.deleteButton.addEventListener("click", () => gallery.remove(place.id).catch(console.log));
-    this.likeButton = this.element.querySelector(".card__like-button");
+    this.likeSection = this.element.querySelector(".card__like-section");
+    this.likeCount = this.likeSection.querySelector(".card__like-count");
+    this.likeButton = this.likeSection.querySelector(".card__like-button");
     this.likeButton.addEventListener("click", () => place.toggleLike().catch(console.log));
 
     this.update();
@@ -48,6 +50,13 @@ export class Card {
     this.name.textContent = this.place.name;
     this.image.src = this.place.imageURL;
     this.image.alt = `Изображение "${this.place.name}"`;
+    if (this.place.likes > 0) {
+      this.likeSection.classList.add("card__like-section_has-likes");
+      this.likeCount.textContent = this.place.likes;
+    } else {
+      this.likeSection.classList.remove("card__like-section_has-likes");
+      this.likeCount.textContent = "";
+    }
     this.likeButton.classList.toggle("card__like-button_is-active", this.place.liked);
   }
 }
@@ -66,7 +75,7 @@ export class Deck {
   }
 
   update() {
-    this.setCards(this.fetchCards(this.gallery));
+    this.setCards(this.fetchCards());
   }
 
   /**

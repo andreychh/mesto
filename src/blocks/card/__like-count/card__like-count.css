@@ -1,0 +1,9 @@
+.card__like-count {
+  font-size: 13px;
+  display: none;
+  color: black;
+}
+
+.card__like-section_has-likes .card__like-count {
+  display: inline-block;
+}
