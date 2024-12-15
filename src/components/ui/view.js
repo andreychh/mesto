@@ -3,9 +3,9 @@ export class Profile {
    * @param {User} user
    */
   constructor(user) {
-    user.events.change.subscribe(() => this.update());
-
     this.user = user;
+    this.user.events.change.subscribe(() => this.update());
+
     this.element = document.querySelector(".profile");
     this.nameText = this.element.querySelector(".profile__title");
     this.jobText = this.element.querySelector(".profile__description");
@@ -26,28 +26,29 @@ export class Card {
 
   /**
    * @param {Place} place
+   * @param {Gallery} gallery
    */
-  constructor(place) {
+  constructor(place, gallery) {
     this.place = place;
     this.place.events.change.subscribe(() => this.update());
 
     this.element = Card.template.cloneNode(true);
     this.name = this.element.querySelector(".card__title");
     this.image = this.element.querySelector(".card__image");
-    this.image.setAttribute("place-id", place.id.toString());
+    this.image.setAttribute("place-id", place.id);
     this.deleteButton = this.element.querySelector(".card__delete-button");
-    this.deleteButton.addEventListener("click", () => place.remove());
+    this.deleteButton.addEventListener("click", () => gallery.remove(place.id).catch(console.log));
     this.likeButton = this.element.querySelector(".card__like-button");
-    this.likeButton.addEventListener("click", () => place.toggleLike());
+    this.likeButton.addEventListener("click", () => place.toggleLike().catch(console.log));
 
     this.update();
   }
 
   update() {
-    this.name.textContent = this.place.name();
-    this.image.src = this.place.imageURL();
-    this.image.alt = `Изображение "${this.place.name()}"`;
-    this.likeButton.classList.toggle("card__like-button_is-active", this.place.liked());
+    this.name.textContent = this.place.name;
+    this.image.src = this.place.imageURL;
+    this.image.alt = `Изображение "${this.place.name}"`;
+    this.likeButton.classList.toggle("card__like-button_is-active", this.place.liked);
   }
 }
 
@@ -57,22 +58,22 @@ export class Deck {
    */
   constructor(gallery) {
     this.gallery = gallery;
-    this.gallery.events.change.subscribe(() => this.reset());
+    this.gallery.events.change.subscribe(() => this.update());
 
     this.list = document.querySelector(".places__list");
+
+    this.update();
   }
 
-  reset() {
-    this.setCards(this.fetchCards());
+  update() {
+    this.setCards(this.fetchCards(this.gallery));
   }
 
   /**
    * @returns {Card[]}
    */
   fetchCards() {
-    return this.gallery.all()
-      .map((place) => new Card(place))
-      .sort((a, b) => b.place.id - a.place.id);
+    return this.gallery.places.map((place) => new Card(place, this.gallery));
   }
 
   /**

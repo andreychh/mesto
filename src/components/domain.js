@@ -3,115 +3,120 @@ import {Event} from "./internal";
 
 export class User {
   /**
-   * @param {string} name
-   * @param {string} job
-   * @param {string} avatarURL
+   * @param {APIClient} client
+   * @param {APIUser} apiUser
    */
-  constructor(name, job, avatarURL) {
+  constructor(client, apiUser) {
     this.events = {change: new Event()};
-
-    this.name = name;
-    this.job = job;
-    this.avatarURL = avatarURL;
+    this.client = client;
+    this.id = apiUser._id;
+    this.name = apiUser.name;
+    this.job = apiUser.about;
+    this.avatarURL = apiUser.avatar;
   }
 
   /**
    * @param {string} name
    * @param {string} job
+   * @returns {Promise<void>}
    */
-  update(name, job) {
-    this.name = name;
-    this.job = job;
+  async update(name, job) {
+    const apiUser = await this.client.updateUser({name, about: job});
+    this.name = apiUser.name;
+    this.job = apiUser.about;
     this.events.change.trigger();
   }
 
   /**
    * @param {string} avatarURL
+   * @returns {Promise<void>}
    */
-  setAvatarURL(avatarURL) {
-    this.avatarURL = avatarURL;
+  async setAvatarURL(avatarURL) {
+    const apiUser = await this.client.updateUserAvatar({avatar: avatarURL});
+    this.avatarURL = apiUser.avatar;
     this.events.change.trigger();
   }
 }
 
 export class Place {
   /**
-   * @param {number} id
-   * @param {Gallery} source
+   * @param {APIClient} client
+   * @param {APIPlace} apiPlace
+   * @param {boolean} liked
+   * @param {number} likes
    */
-  constructor(id, source) {
+  constructor(client, apiPlace, liked, likes) {
     this.events = {change: new Event()};
-
-    this.id = id;
-    this.source = source;
+    this.client = client;
+    this.id = apiPlace._id;
+    this.name = apiPlace.name;
+    this.imageURL = apiPlace.link;
+    this.liked = liked;
+    this.likes = likes;
   }
 
-  /**
-   * @returns {string}
-   */
-  name() {
-    return this.source.places.get(this.id).name;
-  }
+  async toggleLike() {
+    const apiPlace = (this.liked)
+      ? await this.client.dislikePlace(this.id)
+      : await this.client.likePlace(this.id);
 
-  /**
-   * @returns {string}
-   */
-  imageURL() {
-    return this.source.places.get(this.id).imageURL;
-  }
+    const userID = await this.client.getUser().then((user) => user._id);
+    const likerIDs = apiPlace.likes.map((user) => user._id);
 
-  /**
-   * @returns {boolean}
-   */
-  liked() {
-    return this.source.places.get(this.id).liked;
-  }
-
-  toggleLike() {
-    const place = this.source.places.get(this.id);
-    place.liked = !place.liked;
+    this.liked = likerIDs.includes(userID);
+    this.likes = likerIDs.length;
     this.events.change.trigger();
-  }
-
-  remove() {
-    this.source.remove(this.id);
   }
 }
 
 export class Gallery {
-  constructor() {
+  /**
+   * @param {APIClient} client
+   * @param {APIPlace[]} apiPlaces
+   * @param apiUser
+   */
+  constructor(client, apiPlaces, apiUser) {
     this.events = {change: new Event()};
-
-    this.places = new Map();
-    this.lastUsedID = 0;
+    this.client = client;
+    this.user = new User(client, apiUser);
+    this.places = apiPlaces.map((apiPlace) => this.apiPlaceToPlace(apiPlace));
   }
 
   /**
    * @param {string} name
    * @param {string} imageURL
-   * @param {boolean} liked
+   * @returns {Promise<void>}
+   */
+  async add(name, imageURL) {
+    const apiPlace = await this.client.createPlace({name, link: imageURL});
+    this.places.unshift(this.apiPlaceToPlace(apiPlace));
+    this.events.change.trigger();
+  }
+
+  /**
+   * @param {string} id
+   * @returns {Promise<void>}
+   */
+  async remove(id) {
+    await this.client.deletePlace(id);
+    this.places = this.places.filter((place) => place.id !== id);
+    this.events.change.trigger();
+  }
+
+  /**
+   * @param {string} id
    * @returns {Place}
    */
-  add(name, imageURL, liked = false) {
-    const id = ++this.lastUsedID;
-    this.places.set(id, {id, name, imageURL, liked});
-    this.events.change.trigger();
-    return new Place(id, this);
+  find(id) {
+    return this.places.find((place) => place.id === id);
   }
 
   /**
-   * @param {number} id
+   * @param {APIPlace} apiPlace
+   * @returns {Place}
    */
-  remove(id) {
-    this.places.delete(id);
-    this.events.change.trigger();
-  }
-
-  /**
-   * @returns {Place[]}
-   */
-  all() {
-    return Array.from(this.places.values())
-      .map((place) => new Place(place.id, this));
+  apiPlaceToPlace(apiPlace) {
+    const likerIDs = apiPlace.likes.map((apiUser) => apiUser._id);
+    return new Place(this.client, apiPlace, likerIDs.includes(this.user.id), likerIDs.length);
   }
 }

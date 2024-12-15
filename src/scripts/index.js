@@ -1,23 +1,26 @@
 import "../styles/index.css";
-import {initialCards} from "../components/mock";
-import initialAvatarURL from "../images/avatar.jpg";
 
+import {APIClient} from "../components/internal";
 import {Gallery, User} from "../components/domain";
 import {Deck, Profile} from "../components/ui/view";
 import {CardPopup, ImagePopup, ProfileAvatarPopup, ProfileInfoPopup} from "../components/ui/popup";
 
-function init(cards) {
-  const user = new User("Жак-Ив Кусто", "Исследователь океана", initialAvatarURL);
-  const places = new Gallery();
 
+async function init() {
+  const client = new APIClient(process.env.API_TOKEN, process.env.API_GROUP);
+  const apiUser = await client.getUser();
+  const apiPlaces = await client.getPlaces();
+
+  const user = new User(client, apiUser);
   const profile = new Profile(user);
-  cards.forEach((place) => places.add(place.name, place.link));
-  const deck = new Deck(places);
-  deck.reset();
+
+  const gallery = new Gallery(client, apiPlaces, apiUser);
+  const deck = new Deck(gallery);
+
   const profileInfoPopup = new ProfileInfoPopup(user);
   const profileAvatarPopup = new ProfileAvatarPopup(user);
-  const cardPopup = new CardPopup(places);
-  const imagePopup = new ImagePopup(places);
+  const cardPopup = new CardPopup(gallery);
+  const imagePopup = new ImagePopup(gallery);
 }
 
-init(initialCards);
+await init();

@@ -68,7 +68,7 @@ export class Form {
     this.submitButton = this.form.querySelector(".popup__button");
     this.inputFields = this.fetchInputFields();
 
-    this.form.addEventListener("input", () => this.updateSubmitButtonState());
+    this.form.addEventListener("input", () => this.updateValidationState());
   }
 
   /**
@@ -94,10 +94,18 @@ export class Form {
    */
   setFieldValues(values) {
     this.inputFields.forEach((field) => field.setValue(values[field.name()]));
-    this.updateSubmitButtonState();
+    this.updateValidationState();
   }
 
-  updateSubmitButtonState() {
+  addLoadingState() {
+    this.submitButton.textContent = "Сохранение...";
+  }
+
+  removeLoadingState() {
+    this.submitButton.textContent = "Сохранить";
+  }
+
+  updateValidationState() {
     if (!this.validInputFields()) {
       this.submitButton.classList.add("popup__button_inactive");
     } else {
